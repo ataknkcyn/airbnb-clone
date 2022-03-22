@@ -4,14 +4,15 @@ Ornek bir data set uzerinden express.js, mongodb ve jwt kullanilarak urun listel
 authentication ve authorization islemleri
 
 Gereklilikler
-  Docker
-  docker-compose
+
+      Docker
+      docker-compose
   
 
 Calistirma
   ```docker-compose up``` veya log kayitlarini arka planda saklamak icin  ```docker-compose up -d```
 
-Calistirilacagi yer :  
+Calistirildigi yer :  
   http://localhost  
   http://127.0.0.1
   
