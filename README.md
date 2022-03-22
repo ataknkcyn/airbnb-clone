@@ -14,4 +14,12 @@ Calistirma
 Calistirilacagi yer :  
   http://localhost  
   http://127.0.0.1
+  
+  
+Servis dokumantasyonu :
+
+  [Postman][postman]
+
+[postman]: https://www.postman.com/ataknkcyn/workspace/airbnb-clone/collection/8263151-2df998d9-ceef-47db-bb4c-e5ed46eb5b7c?action=share&creator=8263151 "Servis dokumantasyonu"
+
  
