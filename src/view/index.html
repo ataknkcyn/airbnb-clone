@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Document</title>
+
+		<script>
+			const BASE_URL = "http://localhost";
+			let page = 1;
+			let favoriPage = 1;
+			let token = document.cookie.split("=")[1];
+			let favoriError = false;
+			function createTable(normal, json, element) {
+				let roomKeys = Object.keys(json[0]);
+				let count = 0;
+				count = 0;
+				let tr = document.createElement("tr");
+
+				for (let i of roomKeys) {
+					if (count > 4 && i !== "location") {
+						let th = document.createElement("th");
+						th.innerHTML = i;
+						tr.appendChild(th);
+					}
+
+					count++;
+					if (count === roomKeys.length) {
+						let th = document.createElement("th");
+						th.innerHTML = "Favori";
+						tr.appendChild(th);
+					}
+				}
+
+				element.appendChild(tr);
+				json.forEach((room) => {
+					count = 0;
+					let tr = document.createElement("tr");
+
+					for (let i of roomKeys) {
+						if (count > 4 && i !== "location") {
+							let th = document.createElement("th");
+							th.innerHTML = room[i];
+							tr.appendChild(th);
+						}
+
+						count++;
+						if (count == roomKeys.length) {
+							let addFavorite = document.createElement("input");
+							addFavorite.value = normal ? "Favorilere Ekle" : "Favori Sil";
+							addFavorite.type = "submit";
+							addFavorite.id = room.room_id;
+							addFavorite.addEventListener("click", normal ? favoriEkle : favoriSil);
+							tr.appendChild(addFavorite);
+						}
+					}
+
+					element.appendChild(tr);
+				});
+			}
+		</script>
+	</head>
+	<body>
+		<div id="account">
+			<h3>Giris yap/Kayit ol</h3>
+			<input type="text" name="e_mail" placeholder="Email" id="e_mail" />
+			<input type="password" name="password" placeholder="Password" id="password" />
+			<input type="submit" value="Giris Yap" id="giris-yap" />
+			<input type="submit" value="Kayit ol" id="register" />
+			<p id="error"></p>
+		</div>
+
+		<div id="favori-list">
+			<input type="submit" onclick="logout()" value="Cikis Yap" />
+			<h2>Favoriler</h2>
+			<h3 id="favori-info"></h3>
+			<table border="1" id="favori"></table>
+			<div>
+				<input type="submit" onclick="favoriListele(--favoriPage)" value="<< Onceki Sayfa " />
+				<p id="favori-page"></p>
+				<input type="submit" onclick="favoriListele(++favoriPage)" value="Sonraki Sayfa >>" />
+			</div>
+		</div>
+		<div class="room-list">
+			<h2>Odalar</h2>
+			<h3 id="ekleme-info"></h3>
+			<table border="1" id="rooms"></table>
+			<div>
+				<input type="submit" onclick="listele(--page)" value="<< Onceki Sayfa " />
+				<p id="sayfa"></p>
+				<input type="submit" onclick="listele(++page)" value="Sonraki Sayfa >>" />
+			</div>
+		</div>
+	</body>
+
+	<script>
+		/*
+      ODA LISTELEME
+    */
+		listele();
+		function listele() {
+			if (page < 1) {
+				page = 1;
+				return;
+			}
+			document.getElementById("sayfa").innerHTML = `Sayfa: ${page}`;
+			document.getElementById("rooms").innerHTML = "";
+			let table = document.getElementById("rooms");
+
+			fetch(`${BASE_URL}/rooms?page=${page - 1}`)
+				.then((response) => response.json())
+				.then((json) => {
+					createTable(true, json, table);
+				});
+		}
+		function favoriEkle() {
+			fetch(`${BASE_URL}/favorite/` + this.getAttribute("id"), {
+				method: "POST",
+				headers: { "access-token": token },
+			})
+				.then((a) => a)
+				.then((response) => {
+					if (response.status === 403 || response.status === 401) {
+						document.getElementById("ekleme-info").innerHTML = "Favoriye urun eklemek icin giris yapmalisiniz";
+					}
+					if (response.status === 201) {
+						document.getElementById("ekleme-info").innerHTML = "Favoriye eklendi";
+						favoriListele();
+					}
+
+					if (response.status === 500) {
+						document.getElementById("ekleme-info").innerHTML = "Favoriye eklenemedi/Zaten var ";
+					}
+				});
+		}
+	</script>
+
+	<script>
+		/*
+		    Favori Listeleme
+		  */
+		function favoriListele() {
+			if (favoriPage < 1) {
+				favoriPage = 1;
+			}
+			document.getElementById("favori-page").innerHTML = `Sayfa: ${favoriPage}`;
+			document.getElementById("favori").innerHTML = "";
+			fetch(`${BASE_URL}/favorite?page=${favoriPage - 1}`, {
+				method: "GET",
+				headers: {
+					"access-token": token,
+				},
+			})
+				.then((response) => response.json())
+				.then((json) => {
+					if (json.error) {
+						if (favoriPage > 1) {
+							favoriPage--;
+							favoriListele();
+						}
+						document.getElementById("favori-info").innerHTML = json.error;
+					} else {
+						favoriError = false;
+						createTable(false, json, document.getElementById("favori"));
+						document.getElementById("favori-info").innerHTML = "";
+					}
+				});
+		}
+		function favoriSil() {
+			fetch(`${BASE_URL}/favorite/` + this.getAttribute("id"), {
+				method: "DELETE",
+				headers: { "access-token": token },
+			})
+				.then((a) => a)
+				.then((response) => {
+					if (favoriListele()) {
+						document.getElementById("ekleme-info").innerHTML = "Favori silindi";
+					}
+				});
+		}
+	</script>
+
+	<script>
+		/*
+		    Giris Yap
+		  */
+		if (!token) {
+			document.getElementById("favori-list").style.display = "none";
+		} else {
+			document.getElementById("account").style.display = "none";
+			favoriListele();
+		}
+		const element = document.getElementById("giris-yap");
+		const registerButton = document.getElementById("register");
+		element.addEventListener("click", login);
+		registerButton.addEventListener("click", register);
+
+		function login() {
+			document.getElementById("ekleme-info").innerHTML = "";
+			let e_mail = document.getElementById("e_mail").value;
+			let password = document.getElementById("password").value;
+			fetch(`${BASE_URL}/login?e_mail=${e_mail}&password=${password}`)
+				.then((response) => response.json())
+				.then((json) => {
+					if (json.token) {
+						token = json.token;
+						document.cookie = `access-token=${token}`;
+						document.getElementById("account").style.display = "none";
+						document.getElementById("favori-list").style.display = "block";
+						favoriListele();
+					} else {
+						document.getElementById("error").innerHTML = json.error;
+					}
+				});
+
+			// document.getElementById("demo").innerHTML = "Hello World";
+		}
+
+		function register() {
+			document.getElementById("ekleme-info").innerHTML = "";
+			let e_mail = document.getElementById("e_mail").value;
+			let password = document.getElementById("password").value;
+			fetch(`${BASE_URL}/register`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					e_mail: e_mail,
+					password: password,
+				}),
+			})
+				.then((response) => response.json())
+				.then((json) => {
+					if (json.token) {
+						token = json.token;
+						document.cookie = `access-token=${token}`;
+						document.getElementById("account").style.display = "none";
+						document.getElementById("favori-list").style.display = "block";
+						favoriListele();
+					} else {
+						document.getElementById("error").innerHTML = json.error;
+					}
+				});
+		}
+	</script>
+
+	<script>
+		function logout() {
+			document.cookie = "access-token=";
+			window.location.replace(`${BASE_URL}/`);
+		}
+	</script>
+</html>
