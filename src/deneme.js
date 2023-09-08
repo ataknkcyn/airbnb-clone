@@ -1,1 +1,3 @@
-(function(){log("BOMBA");)();
+(function(){
+    console.log("bomba");
+})();
