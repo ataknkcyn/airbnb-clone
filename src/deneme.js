@@ -1,2 +1,1 @@
-(function(){console.log('Bomba')
-})();
+(function(){console.log('Bomba')})();
